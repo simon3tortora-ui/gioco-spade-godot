@@ -1,34 +1,26 @@
 extends CharacterBody2D
 
 @export var speed: float = 200.0
-@export var max_hp: int = 100
 @onready var anim: AnimatedSprite2D = $AnimatedSprite2D
-@onready var shadow: AnimatedSprite2D = $shadow
-@onready var hp_bar: ProgressBar = $CanvasLayer/ProgressBar
+@onready var shadow: AnimatedSprite2D = $shadow   # <-- AGGIUNTO
 
 var is_attacking := false
-var is_dead := false
-var current_hp: int
 
 func _ready() -> void:
-	current_hp = max_hp
-	hp_bar.max_value = max_hp
-	hp_bar.value = current_hp
-	shadow.play("fermo")
+	shadow.play("fermo")  # <-- AGGIUNTO (default all'avvio)
 
 func _physics_process(_delta: float) -> void:
-	if is_dead:
-		velocity = Vector2.ZERO
-		move_and_slide()
-		return
-
+	# Se sta attaccando, blocca movimento e NON cambiare animazioni
 	if is_attacking:
 		velocity = Vector2.ZERO
 		move_and_slide()
+		
+		# <-- AGGIUNTO: mentre attacca, ombra ferma
 		if shadow.animation != "fermo":
 			shadow.play("fermo")
 		return
 
+	# Movimento 4 direzioni
 	var direction := Vector2.ZERO
 	if Input.is_action_pressed("move_right"):
 		direction.x += 1
@@ -43,22 +35,32 @@ func _physics_process(_delta: float) -> void:
 	velocity = direction * speed
 	move_and_slide()
 
+	# ATTACK (deve stare qui, fuori dal blocco is_attacking)
 	if Input.is_action_just_pressed("attack"):
 		start_attack()
+		
+		# <-- AGGIUNTO: quando parte l'attacco, ombra ferma
 		if shadow.animation != "fermo":
 			shadow.play("fermo")
 		return
 
+	# Animazioni movimento
 	if direction != Vector2.ZERO:
 		if anim.animation != "walk":
 			anim.play("walk")
+
+		# <-- AGGIUNTO: ombra animata mentre cammini
 		if shadow.animation != "camminata":
 			shadow.play("camminata")
+
+		# Flip solo orizzontale (sinistra/destra)
 		if direction.x != 0:
 			anim.flip_h = direction.x < 0
 	else:
 		if anim.animation != "fermo":
 			anim.play("fermo")
+
+		# <-- AGGIUNTO: ombra ferma quando sei fermo
 		if shadow.animation != "fermo":
 			shadow.play("fermo")
 
@@ -68,29 +70,12 @@ func start_attack() -> void:
 	anim.play("attack")
 
 
-func take_damage(amount: int) -> void:
-	if is_dead:
-		return
-	current_hp -= amount
-	if current_hp < 0:
-		current_hp = 0
-	hp_bar.value = current_hp
-	if current_hp <= 0:
-		die()
-
-
-func die() -> void:
-	is_dead = true
-	velocity = Vector2.ZERO
-	anim.play("death")
-	shadow.play("fermo")
-
-
 func _on_animated_sprite_2d_animation_finished() -> void:
+	# Questa funzione viene chiamata SOLO se hai collegato il segnale animation_finished
 	if anim.animation == "attack":
 		is_attacking = false
 		anim.play("fermo")
+
+		# <-- AGGIUNTO: ombra ferma quando finisce l'attacco
 		if shadow.animation != "fermo":
 			shadow.play("fermo")
-	elif anim.animation == "death":
-		anim.stop()
