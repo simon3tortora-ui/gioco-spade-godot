@@ -67,12 +67,12 @@ func _physics_process(_delta: float) -> void:
 
 func start_attack() -> void:
 	is_attacking = true
-	anim.play("attack")
+	anim.play("slash")
 
 
 func _on_animated_sprite_2d_animation_finished() -> void:
 	# Questa funzione viene chiamata SOLO se hai collegato il segnale animation_finished
-	if anim.animation == "attack":
+	if anim.animation == "slash":
 		is_attacking = false
 		anim.play("fermo")
 
